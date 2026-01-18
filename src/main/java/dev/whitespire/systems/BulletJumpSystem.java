@@ -40,7 +40,6 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
         @Nonnull Store<EntityStore> store,
         @Nonnull CommandBuffer<EntityStore> commandBuffer
     ) {
-        // Get the entity from our TargetLock component
         MovementStatesComponent movementStates = archetypeChunk.getComponent(
             index,
             MovementStatesComponent.getComponentType()
