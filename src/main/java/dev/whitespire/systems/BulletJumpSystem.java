@@ -10,16 +10,24 @@ import com.hypixel.hytale.protocol.ChangeVelocityType;
 import com.hypixel.hytale.server.core.entity.entities.player.movement.MovementManager;
 import com.hypixel.hytale.server.core.entity.movement.MovementStatesComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
+import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
+import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.modules.physics.component.Velocity;
 import com.hypixel.hytale.server.core.modules.splitvelocity.VelocityConfig;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.util.Config;
 import dev.whitespire.component.BulletJumpComponent;
+import dev.whitespire.config.BulletJumpConfig;
 import javax.annotation.Nonnull;
 
 public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
 
-    public BulletJumpSystem() {}
+    private Config<BulletJumpConfig> config;
+
+    public BulletJumpSystem(Config<BulletJumpConfig> config) {
+        this.config = config;
+    }
 
     @Nonnull
     @Override
@@ -29,6 +37,21 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
             MovementStatesComponent.getComponentType(),
             BulletJumpComponent.getComponentType(),
             MovementManager.getComponentType()
+        );
+    }
+
+    private void deductStamina(
+        int index,
+        @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
+        @Nonnull Store<EntityStore> store
+    ) {
+        EntityStatMap statMap = archetypeChunk.getComponent(
+            index,
+            EntityStatMap.getComponentType()
+        );
+        statMap.subtractStatValue(
+            DefaultEntityStatTypes.getStamina(),
+            config.get().getStaminaCost()
         );
     }
 
@@ -52,7 +75,7 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
             bulletJumpComponent.tick();
         } else if (
             movementStates.getMovementStates().jumping &&
-            bulletJumpComponent.getTicks() > 5
+            bulletJumpComponent.getTicks() > config.get().getMinSlideTicks()
         ) {
             Velocity playerVelocity = archetypeChunk.getComponent(
                 index,
@@ -67,7 +90,8 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
                 MovementManager.getComponentType()
             );
             double bulletJumpVelocityMultiplier =
-                movementManager.getSettings().jumpForce * 1.5;
+                movementManager.getSettings().jumpForce *
+                config.get().getJumpVelocityMultiplier();
             Vector3d bulletJumpVelocity = playerHeadRotation
                 .getDirection()
                 .scale(bulletJumpVelocityMultiplier);
@@ -77,6 +101,9 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
                 velocityConfig,
                 ChangeVelocityType.Set
             );
+            if (config.get().getStaminaCost() > 0) {
+                deductStamina(index, archetypeChunk, store);
+            }
 
             bulletJumpComponent.reset();
         } else {

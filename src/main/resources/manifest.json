@@ -1,7 +1,7 @@
 {
   "Group": "dev.whitespire",
   "Name": "BulletJump",
-  "Version": "0.1.0",
+  "Version": "0.2.0",
   "Description": "A plugin that implements a bullet jump mechanic.",
   "Authors": [
     {
@@ -15,6 +15,6 @@
   "Dependencies": {},
   "OptionalDependencies": {},
   "DisabledByDefault": false,
-  "IncludesAssetPack": false,
+  "IncludesAssetPack": true,
   "Main": "dev.whitespire.BulletJump"
 }

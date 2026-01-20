@@ -8,7 +8,9 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.util.Config;
 import dev.whitespire.component.BulletJumpComponent;
+import dev.whitespire.config.BulletJumpConfig;
 import dev.whitespire.systems.BulletJumpSystem;
 import javax.annotation.Nonnull;
 
@@ -16,6 +18,7 @@ public class BulletJump extends JavaPlugin {
 
     public static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
     private static BulletJump instance;
+    private final Config<BulletJumpConfig> config;
     public ComponentType<
         EntityStore,
         BulletJumpComponent
@@ -23,17 +26,21 @@ public class BulletJump extends JavaPlugin {
 
     public BulletJump(@Nonnull JavaPluginInit init) {
         super(init);
+        config = this.withConfig("bulletJump", BulletJumpConfig.CODEC);
         instance = this;
     }
 
     @Override
     protected void setup() {
+        this.config.save();
         this.bulletJumpComponentType =
             this.getEntityStoreRegistry().registerComponent(
                 BulletJumpComponent.class,
                 BulletJumpComponent::new
             );
-        this.getEntityStoreRegistry().registerSystem(new BulletJumpSystem());
+        this.getEntityStoreRegistry().registerSystem(
+            new BulletJumpSystem(this.config)
+        );
         this.getEventRegistry().registerGlobal(
             PlayerReadyEvent.class,
             BulletJump::onPlayerReady
