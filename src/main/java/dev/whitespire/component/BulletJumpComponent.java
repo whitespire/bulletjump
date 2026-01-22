@@ -9,9 +9,13 @@ import javax.annotation.Nonnull;
 public class BulletJumpComponent implements Component<EntityStore> {
 
     private int slideTicks;
+    private boolean activeJump;
+    private boolean airSlideBoostGiven;
 
     public BulletJumpComponent() {
         this.slideTicks = 0;
+        this.activeJump = false;
+        this.airSlideBoostGiven = false;
     }
 
     public BulletJumpComponent(BulletJumpComponent other) {
@@ -26,8 +30,29 @@ public class BulletJumpComponent implements Component<EntityStore> {
         this.slideTicks += 1;
     }
 
+    public void useAirSlideBoost() {
+        this.airSlideBoostGiven = true;
+    }
+
+    public void startJump() {
+        this.activeJump = true;
+    }
+
+    public void land() {
+        this.activeJump = false;
+        this.airSlideBoostGiven = false;
+    }
+
     public int getTicks() {
         return this.slideTicks;
+    }
+
+    public boolean isBulletJumpActive() {
+        return this.activeJump;
+    }
+
+    public boolean isAirSlideBoostGiven() {
+        return this.airSlideBoostGiven;
     }
 
     public static ComponentType<

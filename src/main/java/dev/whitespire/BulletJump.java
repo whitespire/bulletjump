@@ -12,6 +12,7 @@ import com.hypixel.hytale.server.core.util.Config;
 import dev.whitespire.component.BulletJumpComponent;
 import dev.whitespire.config.BulletJumpConfig;
 import dev.whitespire.systems.BulletJumpSystem;
+import java.util.logging.Level;
 import javax.annotation.Nonnull;
 
 public class BulletJump extends JavaPlugin {
@@ -32,6 +33,7 @@ public class BulletJump extends JavaPlugin {
 
     @Override
     protected void setup() {
+        LOGGER.setLevel(Level.FINE);
         this.config.save();
         this.bulletJumpComponentType =
             this.getEntityStoreRegistry().registerComponent(
