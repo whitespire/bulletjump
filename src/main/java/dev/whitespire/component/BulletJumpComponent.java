@@ -8,26 +8,35 @@ import javax.annotation.Nonnull;
 
 public class BulletJumpComponent implements Component<EntityStore> {
 
-    private int slideTicks;
+    private float slideSeconds;
+    private float airborneSeconds;
     private boolean activeJump;
     private boolean airSlideBoostGiven;
 
     public BulletJumpComponent() {
-        this.slideTicks = 0;
+        this.slideSeconds = 0;
+        this.airborneSeconds = 0;
         this.activeJump = false;
         this.airSlideBoostGiven = false;
     }
 
     public BulletJumpComponent(BulletJumpComponent other) {
-        this.slideTicks = other.getTicks();
+        this.slideSeconds = other.getSlideSeconds();
+        this.airborneSeconds = other.getAirborneSeconds();
+        this.airSlideBoostGiven = other.isAirSlideBoostGiven();
+        this.activeJump = other.isBulletJumpActive();
     }
 
-    public void reset() {
-        this.slideTicks = 0;
+    public void resetSlide() {
+        this.slideSeconds = 0;
     }
 
-    public void tick() {
-        this.slideTicks += 1;
+    public void tickSlide(float dt) {
+        this.slideSeconds += dt;
+    }
+
+    public void tickAirborne(float dt) {
+        this.airborneSeconds += dt;
     }
 
     public void useAirSlideBoost() {
@@ -41,10 +50,15 @@ public class BulletJumpComponent implements Component<EntityStore> {
     public void land() {
         this.activeJump = false;
         this.airSlideBoostGiven = false;
+        this.airborneSeconds = 0;
     }
 
-    public int getTicks() {
-        return this.slideTicks;
+    public float getSlideSeconds() {
+        return this.slideSeconds;
+    }
+
+    public float getAirborneSeconds() {
+        return this.airborneSeconds;
     }
 
     public boolean isBulletJumpActive() {

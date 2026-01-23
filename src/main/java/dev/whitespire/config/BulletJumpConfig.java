@@ -7,7 +7,7 @@ import com.hypixel.hytale.codec.builder.BuilderCodec;
 public class BulletJumpConfig {
 
     private float staminaCost = 3;
-    private int minSlideTicks = 5;
+    private float minSlideSeconds = 0.3f;
     private double jumpVelocityMultiplier = 1.5;
     public static final BuilderCodec<BulletJumpConfig> CODEC =
         BuilderCodec.builder(BulletJumpConfig.class, BulletJumpConfig::new)
@@ -20,11 +20,11 @@ public class BulletJumpConfig {
             )
             .add()
             .append(
-                new KeyedCodec<Integer>("MinSlideTicks", Codec.INTEGER),
-                (o, i) -> {
-                    o.minSlideTicks = i;
+                new KeyedCodec<Float>("MinSlideTicks", Codec.FLOAT),
+                (o, v) -> {
+                    o.minSlideSeconds = v;
                 },
-                o -> o.minSlideTicks
+                o -> o.minSlideSeconds
             )
             .add()
             .append(
@@ -43,8 +43,8 @@ public class BulletJumpConfig {
         return this.staminaCost;
     }
 
-    public int getMinSlideTicks() {
-        return this.minSlideTicks;
+    public float getMinSlideSeconds() {
+        return this.minSlideSeconds;
     }
 
     public double getJumpVelocityMultiplier() {

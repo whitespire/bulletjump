@@ -8,6 +8,7 @@ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.protocol.ChangeVelocityType;
+import com.hypixel.hytale.protocol.MovementStates;
 import com.hypixel.hytale.server.core.entity.entities.player.movement.MovementManager;
 import com.hypixel.hytale.server.core.entity.movement.MovementStatesComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
@@ -45,11 +46,23 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
     }
 
     private void applyBulletJump(
-        @Nonnull Velocity velocity,
-        @Nonnull BulletJumpComponent bulletJumpComponent,
-        @Nonnull HeadRotation headRotation,
-        @Nonnull MovementManager movementManager
+        int index,
+        @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
+        @Nonnull Store<EntityStore> store
     ) {
+        BulletJump.LOGGER.atFine().log("bulletjump");
+        Velocity velocity = archetypeChunk.getComponent(
+            index,
+            Velocity.getComponentType()
+        );
+        HeadRotation headRotation = archetypeChunk.getComponent(
+            index,
+            HeadRotation.getComponentType()
+        );
+        MovementManager movementManager = archetypeChunk.getComponent(
+            index,
+            MovementManager.getComponentType()
+        );
         double bulletJumpVelocityMultiplier =
             movementManager.getSettings().jumpForce *
             config.get().getJumpVelocityMultiplier();
@@ -60,7 +73,7 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
         velocity.addInstruction(
             bulletJumpVelocity,
             velocityConfig,
-            ChangeVelocityType.Set
+            ChangeVelocityType.Add
         );
     }
 
@@ -69,6 +82,7 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
         @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
         @Nonnull Store<EntityStore> store
     ) {
+        BulletJump.LOGGER.atFine().log("airslide");
         Velocity velocity = archetypeChunk.getComponent(
             index,
             Velocity.getComponentType()
@@ -85,8 +99,8 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
             MovementManager.getComponentType()
         );
         double slideVelocityMultiplier =
-            movementManager.getSettings().jumpForce *
-            config.get().getJumpVelocityMultiplier();
+            movementManager.getSettings().minSlideEntrySpeed * 2;
+
         Vector3d airSlideBoostVelocity =
             BulletJumpPhysics.computeAirSlideBaseBoostVelocity(
                 headRotation.getDirection(),
@@ -95,21 +109,12 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
                     bodyRotation.getYaw()
                 )
             );
-        airSlideBoostVelocity.setY(0);
         airSlideBoostVelocity = airSlideBoostVelocity.scale(
-            slideVelocityMultiplier
-        );
-        BulletJump.LOGGER.atFine().log(
-            String.format(
-                "BJ vec: %f, %f, %f",
-                airSlideBoostVelocity.getX(),
-                airSlideBoostVelocity.getY(),
-                airSlideBoostVelocity.getZ()
-            )
+            slideVelocityMultiplier * config.get().getJumpVelocityMultiplier()
         );
         VelocityConfig velocityConfig = new VelocityConfig();
         velocity.addInstruction(
-            bulletJumpVelocity,
+            airSlideBoostVelocity,
             velocityConfig,
             ChangeVelocityType.Set
         );
@@ -138,55 +143,47 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
         @Nonnull Store<EntityStore> store,
         @Nonnull CommandBuffer<EntityStore> commandBuffer
     ) {
-        MovementStatesComponent movementStates = archetypeChunk.getComponent(
-            index,
-            MovementStatesComponent.getComponentType()
-        );
+        MovementStatesComponent movementStatesComponent =
+            archetypeChunk.getComponent(
+                index,
+                MovementStatesComponent.getComponentType()
+            );
+        MovementStates movementStates =
+            movementStatesComponent.getMovementStates();
         BulletJumpComponent bulletJumpComponent = archetypeChunk.getComponent(
             index,
             BulletJumpComponent.getComponentType()
         );
-        if (
-            movementStates.getMovementStates().crouching &&
-            !movementStates.getMovementStates().onGround
-        ) {
-            BulletJump.LOGGER.atFine().log("sliding while in the air");
-            applyAirSlide(index, archetypeChunk, store);
-            bulletJumpComponent.useAirSlideBoost();
-        }
-        if (movementStates.getMovementStates().sliding) {
-            if (!movementStates.getMovementStates().onGround) {
-            }
-            bulletJumpComponent.tick();
-        } else if (
-            movementStates.getMovementStates().jumping &&
-            bulletJumpComponent.getTicks() > config.get().getMinSlideTicks()
-        ) {
-            Velocity velocity = archetypeChunk.getComponent(
-                index,
-                Velocity.getComponentType()
-            );
-            HeadRotation headRotation = archetypeChunk.getComponent(
-                index,
-                HeadRotation.getComponentType()
-            );
-            MovementManager movementManager = archetypeChunk.getComponent(
-                index,
-                MovementManager.getComponentType()
-            );
-            applyBulletJump(
-                velocity,
-                bulletJumpComponent,
-                headRotation,
-                movementManager
-            );
-            if (config.get().getStaminaCost() > 0) {
-                deductStamina(index, archetypeChunk, store);
+        // Main state selector - in the air (slide boost) or
+        // on the ground (can bullet jump)
+        if (movementStates.onGround) {
+            // do the component ticks first
+            bulletJumpComponent.land();
+            if (movementStates.sliding) {
+                bulletJumpComponent.tickSlide(dt);
+            } else {
+                bulletJumpComponent.resetSlide();
             }
 
-            bulletJumpComponent.reset();
+            // bullet jump condition
         } else {
-            bulletJumpComponent.reset();
+            bulletJumpComponent.tickAirborne(dt);
+            if (
+                movementStates.jumping &&
+                bulletJumpComponent.getSlideSeconds() >=
+                config.get().getMinSlideSeconds()
+            ) {
+                applyBulletJump(index, archetypeChunk, store);
+                bulletJumpComponent.startJump();
+            } else if (
+                movementStates.crouching &&
+                bulletJumpComponent.getAirborneSeconds() > 1 &&
+                !bulletJumpComponent.isAirSlideBoostGiven()
+            ) {
+                applyAirSlide(index, archetypeChunk, store);
+                bulletJumpComponent.useAirSlideBoost();
+            }
+            bulletJumpComponent.resetSlide();
         }
     }
 }
