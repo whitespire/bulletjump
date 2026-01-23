@@ -1,6 +1,7 @@
 package dev.whitespire.util;
 
 import com.hypixel.hytale.math.vector.Vector3d;
+import dev.whitespire.BulletJump;
 
 public final class BulletJumpPhysics {
 
@@ -11,21 +12,35 @@ public final class BulletJumpPhysics {
     // currently heading to.
     public static Vector3d computeAirSlideBaseBoostVelocity(
         Vector3d lookDirection,
-        Vector3d bodyDirection
+        Vector3d velocityDirection
     ) {
         Vector3d baseVelocity = new Vector3d();
         // Y velocity is 0, since we're neither going
         // up or down
         baseVelocity.setY(0);
+        BulletJump.LOGGER.atFine().log(
+            "lookDirection     %f, %f \n" + "velocityDirection %f, %f",
+            lookDirection.getX(),
+            lookDirection.getZ(),
+            velocityDirection.getX(),
+            velocityDirection.getZ()
+        );
 
         // Get the leftmost and rightmost directions
         // we can go by rotating our body direction
         // 90 degrees left and right
-        Vector3d leftmostDirection = bodyDirection.rotateY(
-            (float) (-Math.PI / 2)
-        );
-        Vector3d rightmostDirection = bodyDirection.rotateY(
-            (float) (Math.PI / 2)
+        Vector3d leftmostDirection = velocityDirection
+            .clone()
+            .rotateY((float) (-Math.PI / 2));
+        Vector3d rightmostDirection = velocityDirection
+            .clone()
+            .rotateY((float) (Math.PI / 2));
+        BulletJump.LOGGER.atFine().log(
+            "leftMost    %f, %f \n" + "rightMost %f, %f",
+            leftmostDirection.getX(),
+            leftmostDirection.getZ(),
+            rightmostDirection.getX(),
+            rightmostDirection.getZ()
         );
 
         // Our rotation could have landed us in any
@@ -52,6 +67,15 @@ public final class BulletJumpPhysics {
         double maxZ = Math.max(
             leftmostDirection.getZ(),
             rightmostDirection.getZ()
+        );
+        BulletJump.LOGGER.atFine().log(
+            "X    %f < %f < %f \n" + "Z %f < %f < %f",
+            minX,
+            lookDirection.getX(),
+            maxX,
+            minZ,
+            lookDirection.getZ(),
+            maxZ
         );
         // This way we ensure that our resulting vector coordinates are either
         // original (less than max, bigger than min), or the closest thing.

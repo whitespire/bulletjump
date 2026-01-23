@@ -91,23 +91,17 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
             index,
             HeadRotation.getComponentType()
         );
-        Vector3f bodyRotation = archetypeChunk
-            .getComponent(index, TransformComponent.getComponentType())
-            .getRotation();
         MovementManager movementManager = archetypeChunk.getComponent(
             index,
             MovementManager.getComponentType()
         );
         double slideVelocityMultiplier =
-            movementManager.getSettings().minSlideEntrySpeed * 2;
+            movementManager.getSettings().minSlideEntrySpeed * 8;
 
         Vector3d airSlideBoostVelocity =
             BulletJumpPhysics.computeAirSlideBaseBoostVelocity(
                 headRotation.getDirection(),
-                new Vector3d().assign(
-                    bodyRotation.getPitch(),
-                    bodyRotation.getYaw()
-                )
+                velocity.getVelocity().normalize()
             );
         airSlideBoostVelocity = airSlideBoostVelocity.scale(
             slideVelocityMultiplier * config.get().getJumpVelocityMultiplier()
@@ -174,6 +168,9 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
                 config.get().getMinSlideSeconds()
             ) {
                 applyBulletJump(index, archetypeChunk, store);
+                if (config.get().getStaminaCost() > 0) {
+                    deductStamina(index, archetypeChunk, store);
+                }
                 bulletJumpComponent.startJump();
             } else if (
                 movementStates.crouching &&
