@@ -7,30 +7,39 @@ import com.hypixel.hytale.codec.builder.BuilderCodec;
 public class BulletJumpConfig {
 
     private float staminaCost = 3;
-    private int minSlideTicks = 5;
+    private float minSlideSeconds = 0.25f;
     private double jumpVelocityMultiplier = 1.5;
+    private boolean enableAirSlide = true;
     public static final BuilderCodec<BulletJumpConfig> CODEC =
         BuilderCodec.builder(BulletJumpConfig.class, BulletJumpConfig::new)
             .append(
+                new KeyedCodec<Boolean>("EnableAirSlide", Codec.BOOLEAN),
+                (o, v) -> {
+                    o.enableAirSlide = v;
+                },
+                o -> o.enableAirSlide
+            )
+            .add()
+            .append(
                 new KeyedCodec<Float>("StaminaCost", Codec.FLOAT),
-                (o, f) -> {
-                    o.staminaCost = f;
+                (o, v) -> {
+                    o.staminaCost = v;
                 },
                 o -> o.staminaCost
             )
             .add()
             .append(
-                new KeyedCodec<Integer>("MinSlideTicks", Codec.INTEGER),
-                (o, i) -> {
-                    o.minSlideTicks = i;
+                new KeyedCodec<Float>("MinSlideSeconds", Codec.FLOAT),
+                (o, v) -> {
+                    o.minSlideSeconds = v;
                 },
-                o -> o.minSlideTicks
+                o -> o.minSlideSeconds
             )
             .add()
             .append(
                 new KeyedCodec<Double>("JumpVelocityMultiplier", Codec.DOUBLE),
-                (o, d) -> {
-                    o.jumpVelocityMultiplier = d;
+                (o, v) -> {
+                    o.jumpVelocityMultiplier = v;
                 },
                 o -> o.jumpVelocityMultiplier
             )
@@ -43,11 +52,15 @@ public class BulletJumpConfig {
         return this.staminaCost;
     }
 
-    public int getMinSlideTicks() {
-        return this.minSlideTicks;
+    public float getMinSlideSeconds() {
+        return this.minSlideSeconds;
     }
 
     public double getJumpVelocityMultiplier() {
         return this.jumpVelocityMultiplier;
+    }
+
+    public boolean isAirSlideEnabled() {
+        return this.enableAirSlide;
     }
 }
