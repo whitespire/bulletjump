@@ -23,7 +23,6 @@ import com.hypixel.hytale.server.core.util.Config;
 import dev.whitespire.BulletJump;
 import dev.whitespire.component.BulletJumpComponent;
 import dev.whitespire.config.BulletJumpConfig;
-import dev.whitespire.util.BulletJumpPhysics;
 import javax.annotation.Nonnull;
 
 public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
@@ -50,7 +49,6 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
         @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
         @Nonnull Store<EntityStore> store
     ) {
-        BulletJump.LOGGER.atFine().log("bulletjump");
         Velocity velocity = archetypeChunk.getComponent(
             index,
             Velocity.getComponentType()
@@ -82,7 +80,9 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
         @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
         @Nonnull Store<EntityStore> store
     ) {
-        BulletJump.LOGGER.atFine().log("airslide");
+        if (!config.get().isAirSlideEnabled()) {
+            return;
+        }
         Velocity velocity = archetypeChunk.getComponent(
             index,
             Velocity.getComponentType()
@@ -96,28 +96,28 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
             MovementManager.getComponentType()
         );
         double slideVelocityMultiplier =
-            movementManager.getSettings().minSlideEntrySpeed * 8;
+            movementManager.getSettings().minSlideEntrySpeed *
+            config.get().getJumpVelocityMultiplier() *
+            2;
 
-        Vector3d airSlideBoostVelocity =
-            BulletJumpPhysics.computeAirSlideBaseBoostVelocity(
-                headRotation.getDirection(),
-                velocity.getVelocity().normalize()
-            );
+        Vector3d airSlideBoostVelocity = headRotation.getDirection();
+        airSlideBoostVelocity.setY(0);
         airSlideBoostVelocity = airSlideBoostVelocity.scale(
-            slideVelocityMultiplier * config.get().getJumpVelocityMultiplier()
+            slideVelocityMultiplier
         );
         VelocityConfig velocityConfig = new VelocityConfig();
         velocity.addInstruction(
             airSlideBoostVelocity,
             velocityConfig,
-            ChangeVelocityType.Set
+            ChangeVelocityType.Add
         );
     }
 
     private void deductStamina(
         int index,
         @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
-        @Nonnull Store<EntityStore> store
+        @Nonnull Store<EntityStore> store,
+        float staminaCount
     ) {
         EntityStatMap statMap = archetypeChunk.getComponent(
             index,
@@ -125,7 +125,7 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
         );
         statMap.subtractStatValue(
             DefaultEntityStatTypes.getStamina(),
-            config.get().getStaminaCost()
+            staminaCount
         );
     }
 
@@ -155,8 +155,12 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
             bulletJumpComponent.land();
             if (movementStates.sliding) {
                 bulletJumpComponent.tickSlide(dt);
+                bulletJumpComponent.setCrouchActionHeld(true);
             } else {
                 bulletJumpComponent.resetSlide();
+                if (
+                    movementStates.crouching
+                ) bulletJumpComponent.setCrouchActionHeld(true);
             }
 
             // bullet jump condition
@@ -169,18 +173,37 @@ public class BulletJumpSystem extends EntityTickingSystem<EntityStore> {
             ) {
                 applyBulletJump(index, archetypeChunk, store);
                 if (config.get().getStaminaCost() > 0) {
-                    deductStamina(index, archetypeChunk, store);
+                    deductStamina(
+                        index,
+                        archetypeChunk,
+                        store,
+                        config.get().getStaminaCost()
+                    );
                 }
                 bulletJumpComponent.startJump();
             } else if (
                 movementStates.crouching &&
-                bulletJumpComponent.getAirborneSeconds() > 1 &&
+                bulletJumpComponent.isCrouchActionHeld() &&
+                bulletJumpComponent.getAirborneSeconds() > 0.5 &&
                 !bulletJumpComponent.isAirSlideBoostGiven()
             ) {
                 applyAirSlide(index, archetypeChunk, store);
+                if (config.get().getStaminaCost() > 0) {
+                    deductStamina(
+                        index,
+                        archetypeChunk,
+                        store,
+                        config.get().getStaminaCost() / 2
+                    );
+                }
                 bulletJumpComponent.useAirSlideBoost();
             }
             bulletJumpComponent.resetSlide();
+        }
+        if (movementStates.sliding || movementStates.crouching) {
+            bulletJumpComponent.setCrouchActionHeld(true);
+        } else {
+            bulletJumpComponent.setCrouchActionHeld(false);
         }
     }
 }

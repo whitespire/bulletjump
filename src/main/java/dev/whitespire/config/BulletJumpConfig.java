@@ -7,20 +7,29 @@ import com.hypixel.hytale.codec.builder.BuilderCodec;
 public class BulletJumpConfig {
 
     private float staminaCost = 3;
-    private float minSlideSeconds = 0.3f;
+    private float minSlideSeconds = 0.25f;
     private double jumpVelocityMultiplier = 1.5;
+    private boolean enableAirSlide = true;
     public static final BuilderCodec<BulletJumpConfig> CODEC =
         BuilderCodec.builder(BulletJumpConfig.class, BulletJumpConfig::new)
             .append(
+                new KeyedCodec<Boolean>("EnableAirSlide", Codec.BOOLEAN),
+                (o, v) -> {
+                    o.enableAirSlide = v;
+                },
+                o -> o.enableAirSlide
+            )
+            .add()
+            .append(
                 new KeyedCodec<Float>("StaminaCost", Codec.FLOAT),
-                (o, f) -> {
-                    o.staminaCost = f;
+                (o, v) -> {
+                    o.staminaCost = v;
                 },
                 o -> o.staminaCost
             )
             .add()
             .append(
-                new KeyedCodec<Float>("MinSlideTicks", Codec.FLOAT),
+                new KeyedCodec<Float>("MinSlideSeconds", Codec.FLOAT),
                 (o, v) -> {
                     o.minSlideSeconds = v;
                 },
@@ -29,8 +38,8 @@ public class BulletJumpConfig {
             .add()
             .append(
                 new KeyedCodec<Double>("JumpVelocityMultiplier", Codec.DOUBLE),
-                (o, d) -> {
-                    o.jumpVelocityMultiplier = d;
+                (o, v) -> {
+                    o.jumpVelocityMultiplier = v;
                 },
                 o -> o.jumpVelocityMultiplier
             )
@@ -49,5 +58,9 @@ public class BulletJumpConfig {
 
     public double getJumpVelocityMultiplier() {
         return this.jumpVelocityMultiplier;
+    }
+
+    public boolean isAirSlideEnabled() {
+        return this.enableAirSlide;
     }
 }

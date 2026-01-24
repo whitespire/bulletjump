@@ -11,12 +11,14 @@ public class BulletJumpComponent implements Component<EntityStore> {
     private float slideSeconds;
     private float airborneSeconds;
     private boolean activeJump;
+    private boolean crouchActionHeld;
     private boolean airSlideBoostGiven;
 
     public BulletJumpComponent() {
         this.slideSeconds = 0;
         this.airborneSeconds = 0;
         this.activeJump = false;
+        this.crouchActionHeld = false;
         this.airSlideBoostGiven = false;
     }
 
@@ -24,6 +26,7 @@ public class BulletJumpComponent implements Component<EntityStore> {
         this.slideSeconds = other.getSlideSeconds();
         this.airborneSeconds = other.getAirborneSeconds();
         this.airSlideBoostGiven = other.isAirSlideBoostGiven();
+        this.crouchActionHeld = other.isCrouchActionHeld();
         this.activeJump = other.isBulletJumpActive();
     }
 
@@ -63,6 +66,14 @@ public class BulletJumpComponent implements Component<EntityStore> {
 
     public boolean isBulletJumpActive() {
         return this.activeJump;
+    }
+
+    public void setCrouchActionHeld(boolean v) {
+        this.crouchActionHeld = v;
+    }
+
+    public boolean isCrouchActionHeld() {
+        return this.crouchActionHeld;
     }
 
     public boolean isAirSlideBoostGiven() {
