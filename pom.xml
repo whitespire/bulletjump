@@ -5,10 +5,21 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
 >
     <modelVersion>4.0.0</modelVersion>
-
+    <repositories>
+        <!-- Hytale release repository -->
+        <repository>
+            <id>hytale-release</id>
+            <url>https://maven.hytale.com/release</url>
+        </repository>
+        <!-- Hytale pre-release repository -->
+        <repository>
+            <id>hytale-pre-release</id>
+            <url>https://maven.hytale.com/pre-release</url>
+        </repository>
+    </repositories>
     <groupId>dev.whitespire</groupId>
     <artifactId>BulletJump</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.3.0</version>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -17,12 +28,13 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>com.hypixel.hytale</groupId>
-            <artifactId>HytaleServer-parent</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
+    <dependency>
+        <groupId>com.hypixel.hytale</groupId>
+        <artifactId>Server</artifactId>
+        <!-- Replace with latest version, we provide jars for the last five releases -->
+        <version>2026.01.22-6f8bdbdc4</version>
+        <scope>provided</scope>
+    </dependency>
     </dependencies>
 
 </project>
